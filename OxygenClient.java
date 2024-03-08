@@ -20,6 +20,7 @@ public class OxygenClient {
         for (int i = 0; i < nO; i++) {
             String id = "O" + i;
             String log = id + ", request, " + sdf.format(new Date());
+            System.out.println();
             OxygenClientLogs.add(log);
             sendRequest(id);
         }

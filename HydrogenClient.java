@@ -1,3 +1,4 @@
+import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -19,12 +20,13 @@ public class HydrogenClient {
         for (int i = 0; i < nH; i++) {
             String id = "H" + i;
             String log = id + ", request, " + sdf.format(new Date());
-            System.err.println(log);
+            System.out.println(log);
             HydrogenClientLogs.add(log);
             sendRequest(id);
         }
     }
     private static void sendRequest(String id) {
         // TODO: Add code to send request to server
+
     }
 }
