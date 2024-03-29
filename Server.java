@@ -65,10 +65,6 @@ public class Server {
             synchronized (hydrogenQueue) {
                 synchronized (oxygenQueue) {
                     isBondAvailble = hydrogenQueue.size() >= BOND_THRESHOLD && oxygenQueue.size() >= 1;
-                    if (isBondAvailble){
-                        System.out.println("Hydrogen queue: " + hydrogenQueue.size());
-                        System.out.println("Oxygen queue: " + oxygenQueue.size());
-                    }
                 }
             }
             if (isBondAvailble) {
@@ -76,13 +72,19 @@ public class Server {
                     synchronized (oxygenQueue) {
                         String h1 = hydrogenQueue.remove(0);
                         sendMessage(clients.get("Hydrogen"), h1);
-                        serverLogs.add(h1 + ", bonded, " + sdf.format(new Date()));
+                        String log1 = h1 + ", bonded, " + sdf.format(new Date());
+                        serverLogs.add(log1);
+                        System.out.println(log1);
                         String h2 = hydrogenQueue.remove(0);
                         sendMessage(clients.get("Hydrogen"), h2);
-                        serverLogs.add(h2 + ", bonded, " + sdf.format(new Date()));
+                        String log2 = h2 + ", bonded, " + sdf.format(new Date());
+                        serverLogs.add(log2);
+                        System.out.println(log2);
                         String o = oxygenQueue.remove(0);
                         sendMessage(clients.get("Oxygen"), o);
-                        serverLogs.add(o + ", bonded, " + sdf.format(new Date()));
+                        String log3 = o + ", bonded, " + sdf.format(new Date());
+                        serverLogs.add(log3);
+                        System.out.println(log3);
                     }
                 }
             }
