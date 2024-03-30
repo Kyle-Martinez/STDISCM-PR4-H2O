@@ -63,7 +63,7 @@ public class Server {
                 System.out.println(log);
             }
         }  catch (EOFException e) {
-            System.out.println("Client disconnected");
+            System.out.println(element + " Client disconnected");
         } catch (IOException e) {
             e.printStackTrace();
         }
