@@ -11,6 +11,8 @@ public class Server {
     private static Map<String, Socket> clients = new HashMap<>();
     private static List<String> hydrogenQueue = new ArrayList<>();
     private static List<String> oxygenQueue = new ArrayList<>();
+    private static int nH = 0;
+    private static int nO = 0;
     
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
@@ -21,14 +23,17 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
                 DataInputStream in = new DataInputStream(clientSocket.getInputStream());
                 String clientName = in.readUTF();
+                int nElement = in.readInt();
                 clients.put(clientName, clientSocket);
                 System.out.println("Connected to client: " + clientName);
     
                 if (clientName.equals("Hydrogen")) {
                     Thread hydrogenThread = new Thread(() -> receiveRequests(clients.get("Hydrogen"), "Hydrogen"));
+                    nH = nElement;
                     hydrogenThread.start();
                 } else if (clientName.equals("Oxygen")) {
                     Thread oxygenThread = new Thread(() -> receiveRequests(clients.get("Oxygen"), "Oxygen"));
+                    nO = nElement;
                     oxygenThread.start();
                 }
             }
@@ -90,12 +95,36 @@ public class Server {
                             String log3 = o + ", bonded, " + sdf.format(new Date());
                             serverLogs.add(log3);
                             System.out.println(log3);
+                            if (serverLogs.size() == (nH * 2) + (nO * 2)) {
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                try {
+                                    logsToFile();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+
+    private static void logsToFile() throws IOException{
+        BufferedWriter outputWriter = null;
+        outputWriter = new BufferedWriter(new FileWriter("ServerLogs.txt"));
+        for (int i = 0; i < serverLogs.size(); i++) {
+            outputWriter.write(serverLogs.get(i));
+            outputWriter.newLine();
+        }
+        outputWriter.flush();  
+        outputWriter.close();
+    }
+
     private static void sendMessage(Socket client, String message) {
         try {
             DataOutputStream out = new DataOutputStream(client.getOutputStream());

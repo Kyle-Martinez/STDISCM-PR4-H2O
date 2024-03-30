@@ -49,6 +49,7 @@ public class OxygenClient {
         try {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             out.writeUTF("Oxygen");
+            out.writeInt(nO);
             out.flush();
         } catch (Exception e) {
             e.printStackTrace();

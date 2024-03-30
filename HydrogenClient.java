@@ -49,6 +49,7 @@ public class HydrogenClient {
         try {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             out.writeUTF("Hydrogen");
+            out.writeInt(nH);
             out.flush();
         } catch (Exception e) {
             e.printStackTrace();
