@@ -1,5 +1,7 @@
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
@@ -10,10 +12,12 @@ import java.util.Scanner;
 public class OxygenClient {
     private static int nO;
     private static ArrayList<String> oxygenClientLogs = new ArrayList<>();
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
     private static final String serverIP = "localhost";
     private static final int serverPort = 12345;
     private static Socket socket;
+    private static int requestCount = 0;
+    private static int bondCount = 0;
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter the number of oxygen atoms:");
@@ -27,7 +31,18 @@ public class OxygenClient {
             createRequests();
         } catch (IOException e) {
             e.printStackTrace();
+        } 
+    }
+
+    private static void logsToFile() throws IOException{
+        BufferedWriter outputWriter = null;
+        outputWriter = new BufferedWriter(new FileWriter("OxygenClientLogs.txt"));
+        for (int i = 0; i < oxygenClientLogs.size(); i++) {
+            outputWriter.write(oxygenClientLogs.get(i));
+            outputWriter.newLine();
         }
+        outputWriter.flush();  
+        outputWriter.close();
     }
 
     private static void sendIdentification() {
@@ -48,11 +63,30 @@ public class OxygenClient {
                 while (true) {
                     String id = in.readUTF();
                     String log = id + ", bonded, " + sdf.format(new Date());
-                    oxygenClientLogs.add(log);
-                    System.out.println(log);
+                    synchronized (oxygenClientLogs) {
+                        oxygenClientLogs.add(log);
+                        System.out.println(log);
+                        bondCount++;
+                        if (bondCount == nO){
+                            try {
+                                Thread.sleep(1000); // wait for 1 second
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        }
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                System.out.println("Log size: " + oxygenClientLogs.size() + " - Closing socket.)");
+                try {
+                    socket.close();
+                    logsToFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
     }
@@ -61,9 +95,13 @@ public class OxygenClient {
         for (int i = 0; i < nO; i++) {
             String id = "O" + i;
             String log = id + ", request, " + sdf.format(new Date());
-            oxygenClientLogs.add(log);
+            synchronized (oxygenClientLogs) {
+                oxygenClientLogs.add(log);
+            }
+            // oxygenClientLogs.add(log);
             System.out.println(log);
             sendRequest(id);
+            requestCount++;
         }
     }
 

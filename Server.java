@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Server {
     private static ArrayList<String> serverLogs = new ArrayList<>();
-    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
     private static final int PORT = 12345;
     private static final int BOND_THRESHOLD = 2;
     private static Map<String, Socket> clients = new HashMap<>();
@@ -36,14 +36,16 @@ public class Server {
             e.printStackTrace();
         }
     }
-
+    
     private static void receiveRequests(Socket client, String element) {
         try {
             DataInputStream in = new DataInputStream(client.getInputStream());
             while (true) {
                 String id = in.readUTF();
                 String log = id + ", request, " + sdf.format(new Date());
-                serverLogs.add(log);
+                synchronized (serverLogs) {
+                    serverLogs.add(log);
+                }
                 if (element.equals("Hydrogen")) {
                     synchronized (hydrogenQueue) {
                         hydrogenQueue.add(id);
@@ -55,6 +57,8 @@ public class Server {
                 }
                 System.out.println(log);
             }
+        }  catch (EOFException e) {
+            System.out.println("Client disconnected");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -70,21 +74,23 @@ public class Server {
             if (isBondAvailble) {
                 synchronized (hydrogenQueue) {
                     synchronized (oxygenQueue) {
-                        String h1 = hydrogenQueue.remove(0);
-                        sendMessage(clients.get("Hydrogen"), h1);
-                        String log1 = h1 + ", bonded, " + sdf.format(new Date());
-                        serverLogs.add(log1);
-                        System.out.println(log1);
-                        String h2 = hydrogenQueue.remove(0);
-                        sendMessage(clients.get("Hydrogen"), h2);
-                        String log2 = h2 + ", bonded, " + sdf.format(new Date());
-                        serverLogs.add(log2);
-                        System.out.println(log2);
-                        String o = oxygenQueue.remove(0);
-                        sendMessage(clients.get("Oxygen"), o);
-                        String log3 = o + ", bonded, " + sdf.format(new Date());
-                        serverLogs.add(log3);
-                        System.out.println(log3);
+                        synchronized (serverLogs) {
+                            String h1 = hydrogenQueue.remove(0);
+                            sendMessage(clients.get("Hydrogen"), h1);
+                            String log1 = h1 + ", bonded, " + sdf.format(new Date());
+                            serverLogs.add(log1);
+                            System.out.println(log1);
+                            String h2 = hydrogenQueue.remove(0);
+                            sendMessage(clients.get("Hydrogen"), h2);
+                            String log2 = h2 + ", bonded, " + sdf.format(new Date());
+                            serverLogs.add(log2);
+                            System.out.println(log2);
+                            String o = oxygenQueue.remove(0);
+                            sendMessage(clients.get("Oxygen"), o);
+                            String log3 = o + ", bonded, " + sdf.format(new Date());
+                            serverLogs.add(log3);
+                            System.out.println(log3);
+                        }
                     }
                 }
             }
