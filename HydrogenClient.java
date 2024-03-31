@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,17 +35,6 @@ public class HydrogenClient {
         } 
     }
 
-    private static void logsToFile() throws IOException{
-        BufferedWriter outputWriter = null;
-        outputWriter = new BufferedWriter(new FileWriter("HydrogenClientLogs.txt"));
-        for (int i = 0; i < hydrogenClientLogs.size(); i++) {
-            outputWriter.write(hydrogenClientLogs.get(i));
-            outputWriter.newLine();
-        }
-        outputWriter.flush();  
-        outputWriter.close();
-    }
-
     private static void sendIdentification() {
         try {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -68,10 +58,12 @@ public class HydrogenClient {
                         hydrogenClientLogs.add(log);
                         System.out.println(log);
                         bondCount++;
-                        if (bondCount == nH){
+                        if (bondCount == nH) {
                             try {
-                                Thread.sleep(1000); // wait for 1 second
-                            } catch (InterruptedException e) {
+                                Thread.sleep(1000); 
+                                calculateAndPrintTimeDifference(); 
+                                logsToFile(); 
+                            } catch (InterruptedException | IOException e) {
                                 e.printStackTrace();
                             }
                             break;
@@ -114,5 +106,40 @@ public class HydrogenClient {
     } catch (Exception e) {
         e.printStackTrace();
     }
-}
+    }
+
+    private static void logsToFile() throws IOException{
+        BufferedWriter outputWriter = null;
+        outputWriter = new BufferedWriter(new FileWriter("HydrogenClientLogs.txt"));
+        for (int i = 0; i < hydrogenClientLogs.size(); i++) {
+            outputWriter.write(hydrogenClientLogs.get(i));
+            outputWriter.newLine();
+        }
+        outputWriter.flush();  
+        outputWriter.close();
+    }
+
+    private static void calculateAndPrintTimeDifference() {
+        if (hydrogenClientLogs.isEmpty()) return;
+
+        try {
+            String firstLog = hydrogenClientLogs.get(0);
+            String lastLog = hydrogenClientLogs.get(hydrogenClientLogs.size() - 1);
+
+            String firstTimestampStr = firstLog.split(", ")[2];
+            String lastTimestampStr = lastLog.split(", ")[2];
+
+            Date firstTimestamp = sdf.parse(firstTimestampStr);
+            Date lastTimestamp = sdf.parse(lastTimestampStr);
+
+            long difference = lastTimestamp.getTime() - firstTimestamp.getTime();
+
+            String message = "Time difference: " + difference + " ms";
+            System.out.println(message);
+            hydrogenClientLogs.add(message); 
+        } catch (ParseException e) {
+            System.err.println("Error parsing dates: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
