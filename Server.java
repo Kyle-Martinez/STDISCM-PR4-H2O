@@ -1,4 +1,5 @@
 import java.net.*;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.io.*;
 import java.util.*;
@@ -98,12 +99,8 @@ public class Server {
                             if (serverLogs.size() == (nH * 2) + (nO * 2)) {
                                 try {
                                     Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                try {
-                                    logsToFile();
-                                } catch (IOException e) {
+                                    finalizeSession(); 
+                                } catch (InterruptedException | IOException e) {
                                     e.printStackTrace();
                                 }
                             }
@@ -131,6 +128,35 @@ public class Server {
             out.writeUTF(message);
             out.flush();
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void calculateAndPrintTimeDifference() throws ParseException {
+        if (serverLogs.isEmpty()) return;
+
+        String firstLog = serverLogs.get(0);
+        String lastLog = serverLogs.get(serverLogs.size() - 1);
+        
+        String firstTimestampStr = firstLog.split(", ")[2];
+        String lastTimestampStr = lastLog.split(", ")[2];
+        
+        Date firstTimestamp = sdf.parse(firstTimestampStr);
+        Date lastTimestamp = sdf.parse(lastTimestampStr);
+        
+        long difference = lastTimestamp.getTime() - firstTimestamp.getTime();
+        
+        String message = "Time difference: " + difference + " ms";
+        System.out.println(message);
+        serverLogs.add(message);
+    }
+
+    private static void finalizeSession() throws IOException {
+        try {
+            calculateAndPrintTimeDifference();
+            logsToFile();
+        } catch (ParseException e) {
+            System.err.println("Error parsing dates: " + e.getMessage());
             e.printStackTrace();
         }
     }
