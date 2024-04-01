@@ -4,6 +4,7 @@ import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,17 +35,6 @@ public class OxygenClient {
         } 
     }
 
-    private static void logsToFile() throws IOException{
-        BufferedWriter outputWriter = null;
-        outputWriter = new BufferedWriter(new FileWriter("OxygenClientLogs.txt"));
-        for (int i = 0; i < oxygenClientLogs.size(); i++) {
-            outputWriter.write(oxygenClientLogs.get(i));
-            outputWriter.newLine();
-        }
-        outputWriter.flush();  
-        outputWriter.close();
-    }
-
     private static void sendIdentification() {
         try {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -68,10 +58,12 @@ public class OxygenClient {
                         oxygenClientLogs.add(log);
                         System.out.println(log);
                         bondCount++;
-                        if (bondCount == nO){
+                        if (bondCount == nO) {
                             try {
-                                Thread.sleep(1000); // wait for 1 second
-                            } catch (InterruptedException e) {
+                                Thread.sleep(1000); 
+                                calculateAndPrintTimeDifference(); 
+                                logsToFile(); 
+                            } catch (InterruptedException | IOException e) {
                                 e.printStackTrace();
                             }
                             break;
@@ -114,5 +106,39 @@ public class OxygenClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static void logsToFile() throws IOException{
+        BufferedWriter outputWriter = null;
+        outputWriter = new BufferedWriter(new FileWriter("OxygenClientLogs.txt"));
+        for (int i = 0; i < oxygenClientLogs.size(); i++) {
+            outputWriter.write(oxygenClientLogs.get(i));
+            outputWriter.newLine();
+        }
+        outputWriter.flush();  
+        outputWriter.close();
+    }
+
+    private static void calculateAndPrintTimeDifference() throws ParseException {
+        if (oxygenClientLogs.isEmpty()) return;
+
+        String firstLog = oxygenClientLogs.stream()
+                .filter(log -> log.contains(", request, "))
+                .findFirst()
+                .orElse(null);
+
+        String lastLog = oxygenClientLogs.stream()
+                .filter(log -> log.contains(", bonded, "))
+                .reduce((first, second) -> second)
+                .orElse(null);
+
+        if (firstLog == null || lastLog == null) return;
+
+        Date firstTimestamp = sdf.parse(firstLog.split(", ")[2]);
+        Date lastTimestamp = sdf.parse(lastLog.split(", ")[2]);
+
+        long difference = lastTimestamp.getTime() - firstTimestamp.getTime();
+
+        System.out.println("Time difference: " + difference + " ms");
     }
 }
